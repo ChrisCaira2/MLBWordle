@@ -1,7 +1,9 @@
-import statsapi as mlb
-from flask import Flask, jsonify, request, make_response
-from flask_cors import CORS
+import statsapi as mlb # type: ignore
+from flask import Flask, jsonify, request, make_response # type: ignore
+from flask_cors import CORS # type: ignore
 import random
+import pymongo  # Import the PyMongo library # type: ignore
+from pymongo import MongoClient # type: ignore
 
 app = Flask(__name__)
 
@@ -16,6 +18,11 @@ CORS(app, resources={
         "max_age": 600
     }
 })
+
+# Initialize MongoDB client and database
+client = MongoClient('mongodb://localhost:27017/')
+db = client['mlbwordle']
+game_ids_collection = db['game_ids']
 
 # Add a before_request handler to ensure CORS headers
 @app.after_request
@@ -103,19 +110,20 @@ def get_suggestions():
 @app.route('/api/game-ids', methods=['GET'])
 def get_game_ids():
     try:
-        # Get a list of all games for the specified date range in smaller chunks
-        game_ids = []
-        for year in range(2020, 2025):
-            for month in range(4, 11):  # April to October
-                start_date = f'{year}-{month:02d}-01'
-                end_date = f'{year}-{month:02d}-28'
-                schedule = mlb.schedule(start_date=start_date, end_date=end_date)
-                game_ids.extend([game['game_id'] for game in schedule])
-        print(len(game_ids))
-        if not game_ids:
-            return jsonify({'error': 'No games found in the specified date range'}), 404
+        mode = request.args.get('mode', 'Beginner')
+        if mode == 'Beginner':
+            game_ids_data = game_ids_collection.find_one({'_id': 'game_ids_2021_2024'})
+        elif mode == 'Intermediate':
+            game_ids_data = game_ids_collection.find_one({'_id': 'game_ids_2000_2024'})
+        elif mode == 'Expert':
+            game_ids_data = game_ids_collection.find_one({'_id': 'game_ids_1990_2024'})
+        else:
+            return jsonify({'error': 'Invalid mode'}), 400
 
-        return jsonify(game_ids)
+        if not game_ids_data:
+            return jsonify({'error': 'No game IDs found in the database'}), 404
+
+        return jsonify({'game_ids': game_ids_data['game_ids']})
     except Exception as e:
         print(f"Error fetching game IDs: {str(e)}")
         return jsonify({'error': 'Failed to fetch game IDs'}), 500
@@ -124,48 +132,51 @@ def get_game_ids():
 def get_game_boxscore(game_id):
     try:
         boxscore = mlb.boxscore(game_id)
+        print(f"Fetched boxscore for game_id {game_id}: {boxscore}")
         return jsonify({'boxscore': boxscore})
     except Exception as e:
-        print(f"Error fetching game boxscore: {str(e)}")
+        print(f"Error fetching game boxscore for game_id {game_id}: {str(e)}")
         return jsonify({'error': 'Failed to fetch game boxscore'}), 500
+
+# Initialize a set to track previously fetched game IDs
+fetched_game_ids = set()
+
+@app.route('/api/random-game', methods=['GET'])
+def get_random_game():
+    try:
+        mode = request.args.get('mode', 'Beginner')
+        if mode == 'Beginner':
+            game_ids_data = game_ids_collection.find_one({'_id': 'game_ids_2021_2024'})
+        elif mode == 'Intermediate':
+            game_ids_data = game_ids_collection.find_one({'_id': 'game_ids_2000_2024'})
+        elif mode == 'Expert':
+            game_ids_data = game_ids_collection.find_one({'_id': 'game_ids_1990_2024'})
+        else:
+            return jsonify({'error': 'Invalid mode'}), 400
+
+        if not game_ids_data:
+            return jsonify({'error': 'No game IDs found in the database'}), 404
+
+        game_ids = game_ids_data['game_ids']
+
+        # Filter out previously fetched game IDs
+        available_game_ids = [game_id for game_id in game_ids if game_id not in fetched_game_ids]
+        if not available_game_ids:
+            # Reset the fetched_game_ids set if all game IDs have been used
+            fetched_game_ids.clear()
+            available_game_ids = game_ids
+
+        # Select a random game ID from the available game IDs
+        random_game_id = random.choice(available_game_ids)
+        fetched_game_ids.add(random_game_id)
+
+        # Fetch the boxscore for the selected game ID
+        boxscore = mlb.boxscore(random_game_id)
+        print(f"Fetched boxscore for game_id {random_game_id}: {boxscore}")
+        return jsonify({'boxscore': boxscore})
+    except Exception as e:
+        print(f"Error fetching random game boxscore: {str(e)}")
+        return jsonify({'error': 'Failed to fetch random game boxscore'}), 500
 
 if __name__ == '__main__':
     app.run(host='0.0.0.0', debug=True, port=5000)
-
-def get_player_stats_by_name(name):
-    search_results = mlb.lookup_player(name)
-    if len(search_results) == 0:
-        return None
-    print(search_results[0])
-
-def get_player_stats_by_name_and_team(name, team):
-    search_results = mlb.lookup_player(name)
-    if len(search_results) == 0:
-        return None
-    for player in search_results:
-        if player['team']['abbreviation'] == team:
-            return player
-    return None
-
-def get_player_stats_by_name_and_position(name, position):
-    search_results = mlb.lookup_player(name)
-    if len(search_results) == 0:
-        return None
-    for player in search_results:
-        if player['primaryPosition']['abbreviation'] == position:
-            return player
-    return None
-
-def get_player_stat_data(player_id):
-    player = mlb.player_stat_data(player_id, type='career')
-    if player is None:
-        return None
-    # Print player's home runs
-    for stat in player['stats']:
-        if stat['group'] == 'hitting':
-            print(f"Home Runs: {stat['stats']['homeRuns']}")
-            return stat['stats']['homeRuns']
-    return None
-
-# get_player_stats_by_name('Trout')
-get_player_stat_data(545361)
