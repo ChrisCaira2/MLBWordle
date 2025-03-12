@@ -13,6 +13,7 @@ root.render(
     <Routes>
       <Route path="/home" element={<GuessDate />} />
       <Route path="/" element={<Navigate to="/home" />} />
+      <Route path="*" element={<Navigate to="/home" />} />
     </Routes>
   </Router>
 );

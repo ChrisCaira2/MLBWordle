@@ -3,6 +3,8 @@ import './App.css';
 import ThreeDot from './ThreeDot';
 import { FaChartBar, FaInfoCircle } from 'react-icons/fa';
 
+const backendUrl = process.env.REACT_APP_BACKEND_URL;
+
 function GuessDate() {
     const [gameData, setGameData] = useState(null);
     const [error, setError] = useState(null);
@@ -30,7 +32,7 @@ function GuessDate() {
     useEffect(() => {
         const fetchGameIds = async () => {
             try {
-                const response = await fetch(`http://localhost:5000/api/game-ids`);
+                const response = await fetch(`${backendUrl}/api/game-ids`);
                 if (!response.ok) {
                     throw new Error('Failed to fetch game Ids');
                 }
@@ -49,7 +51,7 @@ function GuessDate() {
         setLoading(true); // Set loading state before the fetch operation
 
         try {
-            const response = await fetch(`http://localhost:5000/api/random-game?mode=${activeMode}`);
+            const response = await fetch(`${backendUrl}/api/random-game?mode=${activeMode}`);
             if (!response.ok) {
                 throw new Error('Failed to fetch random game boxscore');
             }

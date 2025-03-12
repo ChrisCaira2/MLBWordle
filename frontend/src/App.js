@@ -5,6 +5,8 @@ import RandomGame from './randomGame';
 import ThreeDot from './ThreeDot';
 import GuessDate from './guessDate';
 
+const backendUrl = process.env.REACT_APP_BACKEND_URL;
+
 function App() {
     const [searchTerm, setSearchTerm] = useState('');
     const [playerStats, setPlayerStats] = useState([]);
@@ -26,7 +28,7 @@ function App() {
 
             try {
                 console.log('Fetching suggestions for:', searchTerm); // Debug log
-                const response = await fetch(`http://localhost:5000/api/suggestions?query=${encodeURIComponent(searchTerm)}`);
+                const response = await fetch(`${backendUrl}/api/suggestions?query=${encodeURIComponent(searchTerm)}`);
                 if (!response.ok) {
                     throw new Error('Failed to fetch suggestions');
                 }
@@ -51,7 +53,7 @@ function App() {
         setLoading(true); // Set loading state before the fetch operation
         try {
             console.log('Searching for player:', playerName); // Debug log
-            const response = await fetch(`http://localhost:5000/api/player-stats?name=${encodeURIComponent(playerName)}`);
+            const response = await fetch(`${backendUrl}/api/player-stats?name=${encodeURIComponent(playerName)}`);
             if (!response.ok) {
                 throw new Error('Player not found.');
             }

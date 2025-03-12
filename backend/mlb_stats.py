@@ -10,7 +10,13 @@ app = Flask(__name__)
 # Enable CORS properly for all routes with more permissive settings
 CORS(app, resources={
     r"/api/*": {
-        "origins": ["http://localhost:3000", "http://localhost:8100", "http://127.0.0.1:8100"],  # Add all your frontend URLs
+        "origins": [
+            "http://localhost:3000",
+            "http://localhost:8100",
+            "http://127.0.0.1:8100",
+            "http://mlbwordle1-env.eba-9ccemmu4.us-east-2.elasticbeanstalk.com",
+            "http://mlbwordle.s3-website-us-east-1.amazonaws.com"
+        ],
         "methods": ["GET", "POST", "OPTIONS"],
         "allow_headers": ["Content-Type", "Authorization"],
         "expose_headers": ["Content-Type", "Authorization"],
@@ -53,7 +59,7 @@ def get_player_stats():
         primary_position = search_results[0]['primaryPosition']['abbreviation']
         team_id = search_results[0].get('currentTeam', {}).get('id')
         team_logo = f"https://www.mlbstatic.com/team-logos/{team_id}.svg" if team_id else None
-        if primary_position in ['P', 'SP', 'RP']:
+        if (primary_position in ['P', 'SP', 'RP']):
             for stat in player_stats['stats']:
                 if stat['group'] == 'pitching':
                     result = {
