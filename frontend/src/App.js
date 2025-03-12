@@ -150,7 +150,7 @@ function App() {
         <Router>
             <div className="App">
                 <nav className="navbar">
-                    <div id="menuToggle">
+                    {/* <div id="menuToggle">
                         <input type="checkbox" id="menuCheckbox" ref={menuCheckboxRef} />
                         <span></span>
                         <span></span>
@@ -161,89 +161,11 @@ function App() {
                             <li><Link to="/random-game" onClick={handleMenuClick}>Random Game</Link></li>
                             <li><Link to="/guess-date" onClick={handleMenuClick}>Guess Date</Link></li>
                         </ul>
-                    </div>
+                    </div> */}
                 </nav>
                 <Routes>
-                    <Route exact path="/" element={
-                        <>
-                            <h1>MLB Player Stats</h1>
-                            <form className="search-form" onSubmit={handleSubmit}>
-                                <div className="search-container" onClick={(e) => e.stopPropagation()}>
-                                    <input
-                                        type="text"
-                                        value={searchTerm}
-                                        onChange={handleInputChange}
-                                        onKeyDown={handleKeyDown}
-                                        onFocus={() => setShowSuggestions(true)}
-                                        placeholder="Search for a player..."
-                                        className="search-input"
-                                    />
-                                    {showSuggestions && suggestions.length > 0 && (
-                                        <div className="suggestions-dropdown" ref={suggestionsRef}>
-                                            {suggestions.map((suggestion, index) => (
-                                                <div
-                                                    key={index}
-                                                    className={`suggestion-item ${index === activeSuggestionIndex ? 'active' : ''}`}
-                                                    onClick={() => handleSuggestionClick(suggestion)}
-                                                >
-                                                    {suggestion}
-                                                </div>
-                                            ))}
-                                        </div>
-                                    )}
-                                </div>
-                                <button type="submit" className="search-button">Search</button>
-                            </form>
-
-                            {loading && <ThreeDot variant="pulsate" color="#e28b3b" size="small" text="" textColor="" />}
-
-                            {error && <p className="error">{error}</p>}
-
-                            {playerStats.length > 0 && (
-                                <div className="stats-container">
-                                    {playerStats.map((stats, index) => (
-                                        <div key={index} className="player-stats">
-                                            <button className="remove-button" onClick={() => handleRemovePlayer(index)}>X</button>
-                                            <div className="player-header">
-                                                <img src={stats.team_logo} alt={`${stats.team} logo`} className="team-logo" />
-                                                <h2>{stats.name}</h2>
-                                            </div>
-                                            {stats.type === 'hitter' ? (
-                                                <div className="stats">
-                                                    <div className="stats-row">
-                                                        <p>Batting Average: {stats.batting_avg}</p>
-                                                        <p>On Base Percentage: {stats.obp}</p>
-                                                        <p>Slugging Percentage: {stats.slg}</p>
-                                                        <p>OPS: {stats.ops}</p>
-                                                    </div>
-                                                    <div className="stats-row">
-                                                        <p>Games Played: {stats.games_played}</p>
-                                                        <p>Doubles: {stats.doubles}</p>
-                                                        <p>Triples: {stats.triples}</p>
-                                                        <p>Home Runs: {stats.home_runs}</p>
-                                                    </div>
-                                                </div>
-                                            ) : (
-                                                <div className="stats">
-                                                    <div className="stats-row">
-                                                        <p>Games Started: {stats.games_started}</p>
-                                                        <p>Innings Pitched: {stats.innings_pitched}</p>
-                                                        <p>Wins: {stats.wins}</p>
-                                                    </div>
-                                                    <div className="stats-row">
-                                                        <p>ERA: {stats.era}</p>
-                                                        <p>WHIP: {stats.whip}</p>
-                                                        <p>Strikeouts: {stats.strikeouts}</p>
-                                                    </div>
-                                                </div>
-                                            )}
-                                        </div>
-                                    ))}
-                                </div>
-                            )}
-                        </>
-                    } />
-                    <Route path="/random-game" element={<RandomGame />} />
+                    <Route exact path="/" element={<GuessDate />} />
+                    {/* <Route path="/random-game" element={<RandomGame />} /> */}
                     <Route path="/guess-date" element={<GuessDate />} />
                 </Routes>
             </div>
