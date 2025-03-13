@@ -3,7 +3,8 @@ import './App.css';
 import ThreeDot from './ThreeDot';
 import { FaChartBar, FaInfoCircle } from 'react-icons/fa';
 
-const backendUrl = process.env.REACT_APP_BACKEND_URL;
+// Update the backendUrl to use the Heroku deployment URL
+const backendUrl = 'https://mlbwordle-c34bb59379da.herokuapp.com/';
 
 function GuessDate() {
     const [gameData, setGameData] = useState(null);

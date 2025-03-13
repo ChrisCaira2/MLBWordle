@@ -1,15 +1,15 @@
-from pymongo import MongoClient # type: ignore
-import statsapi as mlb # type: ignore
+import os
+from pymongo import MongoClient
+from dotenv import load_dotenv
+import statsapi as mlb  # type: ignore
 import time
 
-# Connect to MongoDB server
-client = MongoClient('mongodb://localhost:27017/')
+load_dotenv()
 
-# Create or connect to the database
-db = client['mlbwordle']
-
-# Create or connect to the collection
-game_ids_collection = db['game_ids']
+uri = os.getenv('MONGODB_URI')
+client = MongoClient(uri)
+database = client['mlbwordle']
+gamePKS_collection = database['gamePKS']
 
 def find_and_store_game_ids(start_year, end_year, collection_name):
     game_ids = []
@@ -25,7 +25,7 @@ def find_and_store_game_ids(start_year, end_year, collection_name):
                 time.sleep(1)  # Wait for a second before retrying
 
     # Upsert the game IDs in the database
-    game_ids_collection.update_one(
+    gamePKS_collection.update_one(
         {'_id': collection_name},
         {'$set': {'game_ids': game_ids}},
         upsert=True
@@ -34,10 +34,10 @@ def find_and_store_game_ids(start_year, end_year, collection_name):
     print(f"Data inserted/updated successfully for {collection_name}, total game IDs: {len(game_ids)}")
 
 # Find and store GamePKs from 2021-2024 BEGINNER
-# find_and_store_game_ids(2021, 2024, 'game_ids_2021_2024')
+find_and_store_game_ids(2021, 2024, 'game_ids_2021_2024')
 
-# # Find and store GamePKs from 2000-2024 INTERMEDIATE
-# find_and_store_game_ids(2000, 2024, 'game_ids_2000_2024')
+# Find and store GamePKs from 2000-2024 INTERMEDIATE
+find_and_store_game_ids(2000, 2024, 'game_ids_2000_2024')
 
 # Find and store GamePKs from 1990-2024 EXPERT
 find_and_store_game_ids(1980, 2024, 'game_ids_1990_2024')
