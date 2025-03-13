@@ -1,0 +1,30 @@
+services:
+  - type: web
+    name: mlbwordle-backend
+    env: python
+    plan: free
+    buildCommand: "pip install -r backend/requirements.txt"
+    startCommand: "python backend/mlb_stats.py"
+    envVars:
+      - key: MONGODB_URI
+        value: <your-mongodb-uri>
+      - key: PORT
+        value: 5000
+    regions: oregon
+    autoDeploy: true
+    build:
+      dockerfilePath: Dockerfile
+    routes:
+      - type: rewrite
+        source: /*
+        destination: /index.html
+  - type: web
+    name: mlbwordle-frontend
+    env: static
+    plan: free
+    buildCommand: "cd frontend && npm install && npm run build"
+    staticPublishPath: frontend/build
+    routes:
+      - type: rewrite
+        source: /*
+        destination: /index.html

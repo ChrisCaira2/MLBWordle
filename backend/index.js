@@ -74,6 +74,39 @@ app.get('/api/random-game', (req, res) => {
     });
 });
 
+// API route to fetch the daily game
+app.get('/api/daily-game', (req, res) => {
+    const pythonProcess = spawn('python', [path.join(__dirname, 'mlb_stats.py'), 'daily-game']);
+
+    let dataString = '';
+
+    pythonProcess.stdout.on('data', (data) => {
+        dataString += data.toString();
+    });
+
+    pythonProcess.stdout.on('end', () => {
+        try {
+            const result = JSON.parse(dataString);
+            res.json(result);
+        } catch (error) {
+            console.error('Error parsing JSON:', error);
+            res.status(500).send('Error fetching daily game data');
+        }
+    });
+
+    pythonProcess.stderr.on('data', (data) => {
+        console.error(`stderr: ${data}`);
+        res.status(500).send('Error fetching daily game data');
+    });
+
+    pythonProcess.on('close', (code) => {
+        if (code !== 0) {
+            console.error(`python process exited with code ${code}`);
+            res.status(500).send('Error fetching daily game data');
+        }
+    });
+});
+
 // The "catchall" handler: for any request that doesn't
 // match one above, send back React's index.html file.
 app.get('*', (req, res) => {
