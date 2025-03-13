@@ -1,13 +1,39 @@
 const express = require('express');
 const path = require('path');
+const { spawn } = require('child_process');
 const app = express();
 const port = process.env.PORT || 5000;
 
 // Serve static files from the React app
 app.use(express.static(path.join(__dirname, '../frontend/build')));
 
-app.get('/api', (req, res) => {
-    res.send('Hello World!');
+// API route to fetch game IDs
+app.get('/api/game-ids', (req, res) => {
+    // Replace with actual logic to fetch game IDs from MongoDB
+    res.json({ gameIds: [1, 2, 3] });
+});
+
+// API route to fetch a random game based on difficulty
+app.get('/api/random-game', (req, res) => {
+    const { mode } = req.query;
+    const pythonProcess = spawn('python3', [path.join(__dirname, 'mlb_stats.py'), mode]);
+
+    pythonProcess.stdout.on('data', (data) => {
+        const boxscore = JSON.parse(data.toString());
+        res.json(boxscore);
+    });
+
+    pythonProcess.stderr.on('data', (data) => {
+        console.error(`stderr: ${data}`);
+        res.status(500).send('Error fetching game data');
+    });
+
+    pythonProcess.on('close', (code) => {
+        if (code !== 0) {
+            console.error(`python process exited with code ${code}`);
+            res.status(500).send('Error fetching game data');
+        }
+    });
 });
 
 // The "catchall" handler: for any request that doesn't
