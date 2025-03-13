@@ -4,6 +4,8 @@ from flask_cors import CORS
 import random
 import pymongo
 from pymongo import MongoClient
+import sys
+import json
 
 app = Flask(__name__)
 
@@ -29,6 +31,31 @@ CORS(app, resources={
 client = MongoClient('mongodb://localhost:27017/')
 db = client['mlbwordle']
 game_ids_collection = db['game_ids']
+
+def get_game_ids(mode):
+    if mode == 'Beginner':
+        game_ids_data = game_ids_collection.find_one({'_id': 'game_ids_2021_2024'})
+    elif mode == 'Intermediate':
+        game_ids_data = game_ids_collection.find_one({'_id': 'game_ids_2000_2024'})
+    elif mode == 'Expert':
+        game_ids_data = game_ids_collection.find_one({'_id': 'game_ids_1990_2024'})
+    else:
+        return {'error': 'Invalid mode'}
+
+    if not game_ids_data:
+        return {'error': 'No game IDs found in the database'}
+
+    return {'game_ids': game_ids_data['game_ids']}
+
+def get_random_game_box_score(mode):
+    game_ids_data = get_game_ids(mode)
+    if 'error' in game_ids_data:
+        return game_ids_data
+
+    game_ids = game_ids_data['game_ids']
+    random_game_id = random.choice(game_ids)
+    boxscore = mlb.boxscore(random_game_id)
+    return {'gamePK': random_game_id, 'boxscore': boxscore}
 
 @app.route('/api/player-stats', methods=['GET'])
 def get_player_stats():
@@ -105,22 +132,13 @@ def get_suggestions():
         return jsonify([])
 
 @app.route('/api/game-ids', methods=['GET'])
-def get_game_ids():
+def get_game_ids_route():
     try:
         mode = request.args.get('mode', 'Beginner')
-        if mode == 'Beginner':
-            game_ids_data = game_ids_collection.find_one({'_id': 'game_ids_2021_2024'})
-        elif mode == 'Intermediate':
-            game_ids_data = game_ids_collection.find_one({'_id': 'game_ids_2000_2024'})
-        elif mode == 'Expert':
-            game_ids_data = game_ids_collection.find_one({'_id': 'game_ids_1990_2024'})
-        else:
-            return jsonify({'error': 'Invalid mode'}), 400
-
-        if not game_ids_data:
-            return jsonify({'error': 'No game IDs found in the database'}), 404
-
-        return jsonify({'game_ids': game_ids_data['game_ids']})
+        result = get_game_ids(mode)
+        if 'error' in result:
+            return jsonify(result), 400
+        return jsonify(result)
     except Exception as e:
         print(f"Error fetching game IDs: {str(e)}")
         return jsonify({'error': 'Failed to fetch game IDs'}), 500
@@ -142,35 +160,10 @@ fetched_game_ids = set()
 def get_random_game():
     try:
         mode = request.args.get('mode', 'Beginner')
-        if mode == 'Beginner':
-            game_ids_data = game_ids_collection.find_one({'_id': 'game_ids_2021_2024'})
-        elif mode == 'Intermediate':
-            game_ids_data = game_ids_collection.find_one({'_id': 'game_ids_2000_2024'})
-        elif mode == 'Expert':
-            game_ids_data = game_ids_collection.find_one({'_id': 'game_ids_1990_2024'})
-        else:
-            return jsonify({'error': 'Invalid mode'}), 400
-
-        if not game_ids_data:
-            return jsonify({'error': 'No game IDs found in the database'}), 404
-
-        game_ids = game_ids_data['game_ids']
-
-        # Filter out previously fetched game IDs
-        available_game_ids = [game_id for game_id in game_ids if game_id not in fetched_game_ids]
-        if not available_game_ids:
-            # Reset the fetched_game_ids set if all game IDs have been used
-            fetched_game_ids.clear()
-            available_game_ids = game_ids
-
-        # Select a random game ID from the available game IDs
-        random_game_id = random.choice(available_game_ids)
-        fetched_game_ids.add(random_game_id)
-
-        # Fetch the boxscore for the selected game ID
-        boxscore = mlb.boxscore(random_game_id)
-        print(f"Fetched boxscore for game_id {random_game_id}: {boxscore}")
-        return jsonify({'gamePK': random_game_id, 'boxscore': boxscore})
+        result = get_random_game_box_score(mode)
+        if 'error' in result:
+            return jsonify(result), 400
+        return jsonify(result)
     except Exception as e:
         print(f"Error fetching random game boxscore: {str(e)}")
         return jsonify({'error': 'Failed to fetch random game boxscore'}), 500

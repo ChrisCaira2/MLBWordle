@@ -1,1 +1,1 @@
-web: python backend/mlb_stats.py
+web: node backend/index.js
