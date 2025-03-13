@@ -1,9 +1,9 @@
-import statsapi as mlb # type: ignore
-from flask import Flask, jsonify, request, make_response # type: ignore
-from flask_cors import CORS # type: ignore
+import statsapi as mlb
+from flask import Flask, jsonify, request
+from flask_cors import CORS
 import random
-import pymongo  # Import the PyMongo library # type: ignore
-from pymongo import MongoClient # type: ignore
+import pymongo
+from pymongo import MongoClient
 
 app = Flask(__name__)
 
@@ -29,15 +29,6 @@ CORS(app, resources={
 client = MongoClient('mongodb://localhost:27017/')
 db = client['mlbwordle']
 game_ids_collection = db['game_ids']
-
-# Add a before_request handler to ensure CORS headers
-@app.after_request
-def after_request(response):
-    response.headers['Access-Control-Allow-Origin'] = request.headers.get('Origin', '*')
-    response.headers['Vary'] = 'Origin'
-    response.headers.add('Access-Control-Allow-Headers', 'Content-Type,Authorization')
-    response.headers.add('Access-Control-Allow-Methods', 'GET,PUT,POST,DELETE,OPTIONS')
-    return response
 
 @app.route('/api/player-stats', methods=['GET'])
 def get_player_stats():
