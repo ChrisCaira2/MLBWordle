@@ -169,4 +169,17 @@ def get_random_game():
         return jsonify({'error': 'Failed to fetch random game boxscore'}), 500
 
 if __name__ == '__main__':
-    app.run(host='0.0.0.0', debug=True, port=5000)
+    if len(sys.argv) > 1:
+        command = sys.argv[1]
+        mode = sys.argv[2] if len(sys.argv) > 2 else 'Beginner'
+
+        if command == 'game-ids':
+            result = get_game_ids(mode)
+        elif command == 'random-game':
+            result = get_random_game_box_score(mode)
+        else:
+            result = {'error': 'Invalid command'}
+
+        print(json.dumps(result))
+    else:
+        app.run(host='0.0.0.0', debug=True, port=5000)

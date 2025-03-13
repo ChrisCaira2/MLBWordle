@@ -9,7 +9,7 @@ app.use(express.static(path.join(__dirname, '../frontend/build')));
 
 // API route to fetch game IDs
 app.get('/api/game-ids', (req, res) => {
-    const pythonProcess = spawn('python3', [path.join(__dirname, 'mlb_stats.py'), 'game-ids', req.query.mode]);
+    const pythonProcess = spawn('python', [path.join(__dirname, 'mlb_stats.py'), 'game-ids', req.query.mode]);
 
     let dataString = '';
 
@@ -43,7 +43,7 @@ app.get('/api/game-ids', (req, res) => {
 // API route to fetch a random game based on difficulty
 app.get('/api/random-game', (req, res) => {
     const { mode } = req.query;
-    const pythonProcess = spawn('python3', [path.join(__dirname, 'mlb_stats.py'), 'random-game', mode]);
+    const pythonProcess = spawn('python', [path.join(__dirname, 'mlb_stats.py'), 'random-game', mode]);
 
     let dataString = '';
 
