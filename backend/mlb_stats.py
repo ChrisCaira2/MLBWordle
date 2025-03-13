@@ -14,8 +14,6 @@ CORS(app, resources={
             "http://localhost:3000",
             "http://localhost:8100",
             "http://127.0.0.1:8100",
-            "http://mlbwordle1-env.eba-9ccemmu4.us-east-2.elasticbeanstalk.com",
-            "http://mlbwordle.s3-website-us-east-1.amazonaws.com"
         ],
         "methods": ["GET", "POST", "OPTIONS"],
         "allow_headers": ["Content-Type", "Authorization"],
