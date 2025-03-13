@@ -26,8 +26,8 @@ app.get('/api/random-game', (req, res) => {
 
     pythonProcess.stdout.on('end', () => {
         try {
-            const boxscore = JSON.parse(dataString);
-            res.json(boxscore);
+            const result = JSON.parse(dataString);
+            res.json(result);
         } catch (error) {
             console.error('Error parsing JSON:', error);
             res.status(500).send('Error fetching game data');

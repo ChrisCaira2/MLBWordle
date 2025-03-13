@@ -179,7 +179,7 @@ def get_random_game():
         # Fetch the boxscore for the selected game ID
         boxscore = mlb.boxscore(random_game_id)
         print(f"Fetched boxscore for game_id {random_game_id}: {boxscore}")
-        return jsonify({'boxscore': boxscore})
+        return jsonify({'gamePK': random_game_id, 'boxscore': boxscore})
     except Exception as e:
         print(f"Error fetching random game boxscore: {str(e)}")
         return jsonify({'error': 'Failed to fetch random game boxscore'}), 500
