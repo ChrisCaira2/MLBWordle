@@ -16,11 +16,22 @@ app.get('/api/game-ids', (req, res) => {
 // API route to fetch a random game based on difficulty
 app.get('/api/random-game', (req, res) => {
     const { mode } = req.query;
-    const pythonProcess = spawn('python3', [path.join(__dirname, 'mlb_stats.py'), mode]);
+    const pythonProcess = spawn('python', [path.join(__dirname, 'mlb_stats.py'), mode]);
+
+    let dataString = '';
 
     pythonProcess.stdout.on('data', (data) => {
-        const boxscore = JSON.parse(data.toString());
-        res.json(boxscore);
+        dataString += data.toString();
+    });
+
+    pythonProcess.stdout.on('end', () => {
+        try {
+            const boxscore = JSON.parse(dataString);
+            res.json(boxscore);
+        } catch (error) {
+            console.error('Error parsing JSON:', error);
+            res.status(500).send('Error fetching game data');
+        }
     });
 
     pythonProcess.stderr.on('data', (data) => {
