@@ -46,7 +46,7 @@ app.get('/api/game-ids', async (req, res) => {
 // API route to fetch a random game based on difficulty
 app.get('/api/random-game', (req, res) => {
     const { mode } = req.query;
-    const pythonProcess = spawn('python', [path.join(__dirname, 'mlb_stats.py'), mode]);
+    const pythonProcess = spawn('python3', [path.join(__dirname, 'mlb_stats.py'), mode]);
 
     let dataString = '';
 
