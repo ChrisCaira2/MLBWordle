@@ -1,12 +1,9 @@
-import statsapi as mlb
-from flask import Flask, jsonify, request, make_response
-from flask_cors import CORS
+import statsapi as mlb # type: ignore
+from flask import Flask, jsonify, request, make_response # type: ignore
+from flask_cors import CORS # type: ignore
 import random
-import pymongo
-from pymongo import MongoClient
-import sys
-import json
-from datetime import datetime, timedelta
+import pymongo  # Import the PyMongo library # type: ignore
+from pymongo import MongoClient # type: ignore
 
 app = Flask(__name__)
 
@@ -32,48 +29,6 @@ CORS(app, resources={
 client = MongoClient('mongodb://localhost:27017/')
 db = client['mlbwordle']
 game_ids_collection = db['game_ids']
-daily_game_collection = db['daily_game']
-
-def get_game_ids(mode):
-    if mode == 'Beginner':
-        game_ids_data = game_ids_collection.find_one({'_id': 'game_ids_2021_2024'})
-    elif mode == 'Intermediate':
-        game_ids_data = game_ids_collection.find_one({'_id': 'game_ids_2000_2024'})
-    elif mode == 'Expert':
-        game_ids_data = game_ids_collection.find_one({'_id': 'game_ids_1990_2024'})
-    else:
-        return {'error': 'Invalid mode'}
-
-    if not game_ids_data:
-        return {'error': 'No game IDs found in the database'}
-
-    return {'game_ids': game_ids_data['game_ids']}
-
-def get_random_game_box_score(mode):
-    game_ids_data = get_game_ids(mode)
-    if 'error' in game_ids_data:
-        return game_ids_data
-
-    game_ids = game_ids_data['game_ids']
-    random_game_id = random.choice(game_ids)
-    boxscore = mlb.boxscore(random_game_id)
-    return {'gamePK': random_game_id, 'boxscore': boxscore}
-
-def get_daily_game():
-    today = datetime.now().strftime('%Y-%m-%d')
-    daily_game_data = daily_game_collection.find_one({'date': today})
-
-    if daily_game_data:
-        return daily_game_data
-
-    modes = ['Beginner', 'Intermediate', 'Expert']
-    mode = random.choice(modes)
-    game_data = get_random_game_box_score(mode)
-    game_data['date'] = today
-    game_data['difficulty'] = mode
-
-    daily_game_collection.update_one({'date': today}, {'$set': game_data}, upsert=True)
-    return game_data
 
 # Add a before_request handler to ensure CORS headers
 @app.after_request
@@ -159,13 +114,22 @@ def get_suggestions():
         return jsonify([])
 
 @app.route('/api/game-ids', methods=['GET'])
-def get_game_ids_route():
+def get_game_ids():
     try:
         mode = request.args.get('mode', 'Beginner')
-        result = get_game_ids(mode)
-        if 'error' in result:
-            return jsonify(result), 400
-        return jsonify(result)
+        if mode == 'Beginner':
+            game_ids_data = game_ids_collection.find_one({'_id': 'game_ids_2021_2024'})
+        elif mode == 'Intermediate':
+            game_ids_data = game_ids_collection.find_one({'_id': 'game_ids_2000_2024'})
+        elif mode == 'Expert':
+            game_ids_data = game_ids_collection.find_one({'_id': 'game_ids_1990_2024'})
+        else:
+            return jsonify({'error': 'Invalid mode'}), 400
+
+        if not game_ids_data:
+            return jsonify({'error': 'No game IDs found in the database'}), 404
+
+        return jsonify({'game_ids': game_ids_data['game_ids']})
     except Exception as e:
         print(f"Error fetching game IDs: {str(e)}")
         return jsonify({'error': 'Failed to fetch game IDs'}), 500
@@ -187,37 +151,38 @@ fetched_game_ids = set()
 def get_random_game():
     try:
         mode = request.args.get('mode', 'Beginner')
-        result = get_random_game_box_score(mode)
-        if 'error' in result:
-            return jsonify(result), 400
-        return jsonify(result)
+        if mode == 'Beginner':
+            game_ids_data = game_ids_collection.find_one({'_id': 'game_ids_2021_2024'})
+        elif mode == 'Intermediate':
+            game_ids_data = game_ids_collection.find_one({'_id': 'game_ids_2000_2024'})
+        elif mode == 'Expert':
+            game_ids_data = game_ids_collection.find_one({'_id': 'game_ids_1990_2024'})
+        else:
+            return jsonify({'error': 'Invalid mode'}), 400
+
+        if not game_ids_data:
+            return jsonify({'error': 'No game IDs found in the database'}), 404
+
+        game_ids = game_ids_data['game_ids']
+
+        # Filter out previously fetched game IDs
+        available_game_ids = [game_id for game_id in game_ids if game_id not in fetched_game_ids]
+        if not available_game_ids:
+            # Reset the fetched_game_ids set if all game IDs have been used
+            fetched_game_ids.clear()
+            available_game_ids = game_ids
+
+        # Select a random game ID from the available game IDs
+        random_game_id = random.choice(available_game_ids)
+        fetched_game_ids.add(random_game_id)
+
+        # Fetch the boxscore for the selected game ID
+        boxscore = mlb.boxscore(random_game_id)
+        print(f"Fetched boxscore for game_id {random_game_id}: {boxscore}")
+        return jsonify({'boxscore': boxscore})
     except Exception as e:
         print(f"Error fetching random game boxscore: {str(e)}")
         return jsonify({'error': 'Failed to fetch random game boxscore'}), 500
 
-@app.route('/api/daily-game', methods=['GET'])
-def get_daily_game_route():
-    try:
-        result = get_daily_game()
-        return jsonify(result)
-    except Exception as e:
-        print(f"Error fetching daily game: {str(e)}")
-        return jsonify({'error': 'Failed to fetch daily game'}), 500
-
 if __name__ == '__main__':
-    if len(sys.argv) > 1:
-        command = sys.argv[1]
-        mode = sys.argv[2] if len(sys.argv) > 2 else 'Beginner'
-
-        if command == 'game-ids':
-            result = get_game_ids(mode)
-        elif command == 'random-game':
-            result = get_random_game_box_score(mode)
-        elif command == 'daily-game':
-            result = get_daily_game()
-        else:
-            result = {'error': 'Invalid command'}
-
-        print(json.dumps(result))
-    else:
-        app.run(host='0.0.0.0', debug=True, port=5000)
+    app.run(host='0.0.0.0', debug=True, port=5000)
