@@ -20,7 +20,7 @@ pip install -r requirements.txt
 ```
 
 The script requires:
-- Python 3.6+
+- Python 3.8+
 - selenium
 - beautifulsoup4
 - requests

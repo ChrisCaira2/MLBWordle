@@ -28,6 +28,11 @@ from selenium.common.exceptions import TimeoutException, NoSuchElementException
 from bs4 import BeautifulSoup
 
 
+# Constants
+PAGE_LOAD_WAIT_SECONDS = 5
+INTERACTION_WAIT_SECONDS = 2
+
+
 def setup_driver():
     """Set up Chrome WebDriver with headless options."""
     chrome_options = Options()
@@ -67,8 +72,8 @@ def process_html_content(html_content, year='2023', max_files=5):
         href = link['href']
         text = link.get_text(strip=True)
         
-        # Check if it's an xlsx file
-        if href.endswith('.xlsx') or '.xlsx' in href or href.endswith('.xls') or '.xls' in href:
+        # Check if it's an xlsx or xls file
+        if '.xlsx' in href or '.xls' in href:
             # Make absolute URL if needed
             if not href.startswith('http'):
                 href = 'https://www.beckett.com' + href
@@ -95,7 +100,7 @@ def process_html_content(html_content, year='2023', max_files=5):
             onclick = elem.get('onclick', '')
             text = elem.get_text(strip=True)
             
-            if '.xlsx' in href or '.xls' in href or '.xlsx' in onclick:
+            if '.xlsx' in href or '.xls' in href or '.xlsx' in onclick or '.xls' in onclick:
                 if href and not href.startswith('http'):
                     href = 'https://www.beckett.com' + href
                 if href and href not in [l['url'] for l in xlsx_links]:
@@ -190,7 +195,7 @@ def extract_xlsx_from_beckett(url='https://www.beckett.com/news/category/basebal
         
         # Wait for page to load
         print("Waiting for page to load...")
-        time.sleep(5)
+        time.sleep(PAGE_LOAD_WAIT_SECONDS)
         
         # Get the page source
         page_source = driver.page_source
@@ -217,7 +222,7 @@ def extract_xlsx_from_beckett(url='https://www.beckett.com/news/category/basebal
                         if element.is_displayed() and element.is_enabled():
                             print(f"Clicking element: {element.text[:50]}")
                             element.click()
-                            time.sleep(2)
+                            time.sleep(INTERACTION_WAIT_SECONDS)
                             
                             # Refresh page source and try again
                             page_source = driver.page_source
