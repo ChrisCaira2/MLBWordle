@@ -4,3 +4,18 @@
 !.elasticbeanstalk/*.global.yml
 
 .env
+
+# Downloaded files
+backend/downloads/
+downloads/
+
+# Python
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+venv/
+.Python
+
+# Node
+node_modules/
